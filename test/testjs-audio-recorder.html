@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>测试使用</title>
+  </head>
+  <body>
+    <button class="start">开始</button>
+    <button class="clone">克隆</button>
+    <button class="resume">原始的继续录音</button>
+    <button class="cloneResume">克隆的继续录音</button>
+  </body>
+  <script src="./recorder.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.js"></script>
+  <script>
+    let recorder = new Recorder();
+    let a = null;
+    document.querySelector(".start").addEventListener("click", () => {
+      recorder.start();
+      console.log("开始录音，2s结束");
+      setTimeout(() => {
+        recorder.pause();
+      }, 2000);
+    });
+    document.querySelector(".clone").addEventListener("click", () => {
+      a = _.cloneDeep(recorder);
+      console.log("克隆完成");
+    });
+
+    document.querySelector(".resume").addEventListener("click", () => {
+      recorder.resume();
+      setTimeout(() => {
+        clearInterval(id);
+        recorder.pause();
+      }, 5000);
+      let id = setInterval(() => {
+        console.log("初始的", recorder.duration);
+      }, 1000);
+    });
+
+    document.querySelector(".cloneResume").addEventListener("click", () => {
+      a.resume();
+      console.log(a);
+      setTimeout(() => {
+        clearInterval(id);
+        a.pause();
+      }, 5000);
+      let id = setInterval(() => {
+        console.log("克隆的", a.duration);
+      }, 1000);
+    });
+  </script>
+</html>

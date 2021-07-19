@@ -12,7 +12,6 @@ const state = {
 
 const mutations = {
   addversion(state, newversion) {
-    console.log(newversion, state.historyArr, state.currentVersion);
     // 把之后的擦掉
     state.historyArr.splice(
       state.currentVersion + 1,
@@ -20,7 +19,6 @@ const mutations = {
     );
     let v = lodash.cloneDeep(newversion);
     state.historyArr.push(v);
-    console.log(state.historyArr);
     state.currentVersion++;
   },
   backVersion(state) {

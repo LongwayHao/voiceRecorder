@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>测试使用</title>
+  </head>
+  <body>
+    <audio controls></audio>
+    <audio controls id="anran" src="./梦然-少年.flac"></audio>
+    <button class="start">开始录音</button>
+    <button class="pause">暂停录音</button>
+    <button class="addtrack">添加并转换轨道</button>
+    <button class="putAudio">放到audio</button>
+    <button class="resume">继续录音</button>
+
+    <button class="stop">停止</button>
+
+    <button class="requestData">requestData</button>
+    <button class="play">播放</button>
+    <button class="clone">克隆</button>
+    <button class="resume">原始的继续录音</button>
+    <button class="cloneResume">克隆的继续录音</button>
+  </body>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.js"></script>
+  <script>
+    let anran = document.getElementById("anran");
+    let a = null;
+    let mediaRecorder = null;
+    let sourceAudioStrem = null;
+    let audioPlayDom = document.querySelector("audio");
+    var chunks1 = [];
+    var chunks2 = [];
+
+    async function getPermission() {
+      let constraints = { audio: true, video: false };
+      let stream = await navigator.mediaDevices.getUserMedia(constraints);
+      return stream;
+    }
+
+    document.querySelector(".start").addEventListener("click", async () => {
+      sourceAudioStrem = sourceAudioStrem || (await getPermission());
+      console.log(sourceAudioStrem.getAudioTracks()[0].clone());
+      sourceAudioStrem.addTrack(sourceAudioStrem.getTracks()[0].clone());
+      console.log(sourceAudioStrem);
+
+      mediaRecorder = new MediaRecorder(sourceAudioStrem);
+      console.log(mediaRecorder);
+      mediaRecorder.ondataavailable = function(e) {
+        chunks1.push(e.data);
+      };
+      mediaRecorder.start(1);
+    });
+    document.querySelector(".pause").addEventListener("click", () => {
+      mediaRecorder.pause();
+      console.log(mediaRecorder);
+      // mediaRecorder.ondataavailable(e);
+    });
+    document.querySelector(".requestData").addEventListener("click", () => {
+      mediaRecorder.requestData();
+    });
+    document.querySelector(".addtrack").addEventListener("click", () => {
+      mediaRecorder = new MediaRecorder(sourceAudioStrem);
+      mediaRecorder.ondataavailable = function(e) {
+        chunks1.push(e.data);
+      };
+      mediaRecorder.start(1);
+    });
+
+    document.querySelector(".putAudio").addEventListener("click", () => {
+      var url = URL.createObjectURL(
+        new Blob([...chunks1], { type: "audio/webm;codecs=opus" })
+      );
+      audioPlayDom.src = url;
+    });
+
+    document.querySelector(".resume").addEventListener("click", () => {
+      mediaRecorder.resume();
+    });
+
+    document.querySelector(".stop").addEventListener("click", () => {
+      mediaRecorder.stop();
+      console.log("chunks1", chunks1);
+      console.log("chunks2", chunks2);
+    });
+  </script>
+</html>

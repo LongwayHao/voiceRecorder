@@ -52,12 +52,11 @@ export default {
       isplaying: false,
       playIsPause: false,
 
-      tempState: [],
       resouse: {} //用于播放使用
     };
   },
   props: {
-    recorder: {
+    propRecorder: {
       type: Object,
       default() {
         return {};
@@ -65,11 +64,14 @@ export default {
     }
   },
   computed: {
+    recorder() {
+      console.log("传递给子组件的", this.propRecorder);
+      return lodash.cloneDeep(this.propRecorder);
+    },
     haveResource() {
       return this.recorder.duration;
     },
     currentVersionInStore() {
-      console.log(this.$store.state.historyArr);
       return this.$store.state.currentVersion;
     }
   },
@@ -84,28 +86,10 @@ export default {
   },
   methods: {
     redo() {
-      this.cannotRedo || this.$emit("controlVersion", "foreVersion");
+      this.cannotRedo || this.$emit("controlVersion", { type: "foreVersion" });
     },
     undo() {
-      this.cannotUndo || this.$emit("controlVersion", "backVersion");
-    },
-
-    LoopPlayback(s) {
-      if (this.isNotLoopPlayback) {
-        this.stopPlay();
-        return null;
-      }
-      if (s === "playIsPause") {
-        this.resumePlay(() => {
-          this.stopPlay();
-          this.LoopPlayback();
-        });
-      } else {
-        this.play(() => {
-          this.stopPlay();
-          this.LoopPlayback();
-        });
-      }
+      this.cannotUndo || this.$emit("controlVersion", { type: "backVersion" });
     },
 
     clickLoopPlayback() {
@@ -166,15 +150,17 @@ export default {
       console.log("暂停录音");
       this.isrecording = false;
       console.log(this.recorder.duration);
-      this.$emit("controlVersion", "addversion");
+      this.$emit("controlVersion", { type: "addversion", data: this.recorder });
     },
     // =========================================================================播放相关的方法===================================
     clickPlay() {
+      // 若没有资源或者正在录音，则不能播放
       if (!this.haveResource || this.isrecording) {
         return null;
       }
+
+      // 如果没有循环播放
       if (this.isNotLoopPlayback) {
-        // 如果没有循环播放
         // 查看是否在play，若是 则暂停
         if (this.isplaying) {
           this.pausePlay();
@@ -182,62 +168,70 @@ export default {
           //若没在play  1.暂停中  2.没开始
           if (this.playIsPause) {
             this.resumePlay(() => {
-              this.stopPlay();
+              console.log("播放结束");
+              this.isplaying = false;
             });
           } else {
             this.play(() => {
-              this.stopPlay();
+              console.log("播放结束");
+              this.isplaying = false;
             });
           }
         }
       } else {
         //循环播放的时候
-        if (!this.isplaying) {
+        if (this.isplaying) {
+          this.pausePlay();
+        } else {
           if (this.playIsPause) {
-            this.playIsPause = false;
             this.LoopPlayback("playIsPause");
           } else {
             this.LoopPlayback();
           }
-        } else {
-          this.pausePlay();
         }
       }
     },
 
+    LoopPlayback(s) {
+      if (this.isNotLoopPlayback) {
+        this.stopPlay();
+        return null;
+      }
+      if (s === "playIsPause") {
+        this.resumePlay(() => {
+          this.LoopPlayback();
+        });
+      } else {
+        this.play(() => {
+          this.LoopPlayback();
+        });
+      }
+    },
     play(fn) {
-      console.log("运行play");
+      console.log("开始播放");
       this.isplaying = true;
-      this.resouse = lodash.cloneDeep(this.recorder); //将当前的录音拷贝   播放使用拷贝的
-      // this.resouse = this.recorder;
-      this.resouse.onstopplay = () => {
-        console.log("停止播放");
-      };
-      this.resouse.onplayend = () => {
-        console.log("播放结束");
-        fn();
-      };
-
+      this.resouse = lodash.cloneDeep(lodash.cloneDeep(this.recorder)); //将当前的录音拷贝   播放使用拷贝的
+      this.resouse.onplayend = fn;
       this.resouse.play();
     },
     pausePlay() {
       console.log("暂停播放");
-      this.resouse.pausePlay();
       this.playIsPause = true;
       this.isplaying = false;
+      this.resouse.pausePlay();
     },
     resumePlay(fn) {
       console.log("继续播放");
       this.isplaying = true;
-
+      this.playIsPause = false;
       this.resouse.onplayend = fn;
       this.resouse.resumePlay();
     },
     stopPlay() {
       console.log("结束播放");
-      this.resouse.stopPlay();
       this.isplaying = false;
       this.playIsPause = false;
+      this.resouse.stopPlay();
     },
     getPlayTime() {
       console.log("time:" + this.resouse.getPlayTime());
